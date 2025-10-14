@@ -10,14 +10,16 @@ include("search_algos.jl")
 Takes a DiGraph, a Dict of index to names and a output filename to write the graph in `gph` format.
 Also writes the score in a separate `.score` file.
 """
-function write_gph(dag::DiGraph, idx2names, score, filename)
-    open(filename * ".gph", "w") do io
+function write_gph(dag::DiGraph, idx2names, score, path, filename)
+    isdir(path) || mkdir(path)
+
+    open(path * filename * ".gph", "w") do io
         for edge in edges(dag)
             @printf(io, "%s,%s\n", idx2names[src(edge)], idx2names[dst(edge)])
         end
     end
 
-    open(filename * ".score", "w") do io
+    open(path * filename * ".score", "w") do io
         @printf(io, "%f\n", score)
     end
 end
@@ -37,12 +39,25 @@ function compute(infile, outfile)
     vars = [Variable(Symbol(var), r[i]) for (i, var) in enumerate(names(df))]
 
     ordering = collect(1:length(vars))
-    # Ex: K2Search([1, 2, 3]). Here only var 1 can be parent of 2 and 3. 2 Can only be parent of 3, and so forth
-    score, G = fit(K2Search(ordering), vars, D)
+    # Ex: K2Ordering([1, 2, 3]). Here only var 1 can be parent of 2 and 3. 2 Can only be parent of 3, and so forth
+    k2score, G = K2_search(K2Ordering(ordering), vars, D)
 
-    println("DAG with $(nv(G)) nodes and $(ne(G)) edges")
-    println("Score: ", score)
-    write_gph(G, Dict(i => vars[i].name for i in eachindex(vars)), score, outfile)
+    println("K2 DAG with $(nv(G)) nodes and $(ne(G)) edges")
+    println("Score: ", k2score)
+    write_gph(G, Dict(i => vars[i].name for i in eachindex(vars)), k2score, "output/K2/", outfile)
+
+    ldgs_score, G = local_directed_graph_search(10000, vars, D)
+    println("Local DAG with $(nv(G)) nodes and $(ne(G)) edges")
+    println("Score: ", ldgs_score)
+    write_gph(G, Dict(i => vars[i].name for i in eachindex(vars)), ldgs_score, "output/LDGS/", outfile)
+
+
+    # TODO:
+    # TRY DIFFERENT ORDERINGS FOR K2 (RANDOM, REVERSED, ETC)
+    # INCREASE K FOR LDGS
+    # TRY DIFFERENT INITIAL GRAPHS FOR LDGS (EMPTY, FULL, RANDOM)
+    # TRY DIFFERENT STRATEGIES TO AVOID LOCAL OPTIMA IN LDGS (SIMULATED ANNEALING, TABU SEARCH, ETC)
+
 end
 
 if length(ARGS) != 2
