@@ -45,9 +45,15 @@ function statistics(vars, G, D::Matrix{Int})
     xi = size(D, 1) # number of variables (= nodes/rows in G)
     # n = size(D, 2) # number of observations/samples (= columns in D)
 
+    # println("Computing statistics for $(xi) variables and $(size(D, 2)) observations")
     r = [vars[i].r for i in 1:xi] # cardinalities
     q = [isempty(inneighbors(G, i)) ? 1 : prod(r[j] for j in inneighbors(G, i)) for i in 1:xi] # parent configurations
+    # for i in 1:xi
+    #     println("Variable: ", vars[i].name, ", Cardinality: ", r[i], ", Parent configurations: ", q[i])
+    # end
     M = [zeros(q[i], r[i]) for i in 1:xi] # statistics matrices
+    # println("Matrix sizes: ", [(size(M[i], 1), size(M[i], 2)) for i in 1:xi])
+    # println("Matrix size: ", size(M[i]) for i in 1:xi)
 
     for o in eachcol(D) # for each observation
         for i in 1:xi   # for each variable
@@ -57,6 +63,7 @@ function statistics(vars, G, D::Matrix{Int})
             if !isempty(parents)    # if variable i has parents
                 j = sub2ind(r[parents], o[parents])     # compute the index for the parent configuration
             end
+            # println("Variable: ", vars[i].name, ", Parents: ", [vars[p].name for p in parents], ", Parent config index: ", j, ", State: ", k)
             M[i][j, k] += 1.0 # increment the count for this parent configuration and state
         end
     end
