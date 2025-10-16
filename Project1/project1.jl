@@ -1,6 +1,8 @@
-using Graphs
+using GraphPlot, Graphs, Compose, Cairo
 using Printf
-using CSV, DataFrames
+using CSV
+using DataFrames
+using BenchmarkTools
 
 include("search_algos.jl")
 
@@ -35,22 +37,42 @@ function compute(infile, outfile)
     # to have variables in rows and samples in columns in matrix, not adjoint
     D = Matrix{Int}(permutedims(Matrix(df), (2,1))) # rows: variables, columns: samples
     r = [maximum(df[!, col]) for col in names(df)]
-    # r = [length(unique(df[!, col])) for col in names(df)] # this one is wrong if some value is missing in the data. Unique counts the number of distinct values, not the range of values
     vars = [Variable(Symbol(var), r[i]) for (i, var) in enumerate(names(df))]
 
     ordering = collect(1:length(vars))
     # Ex: K2Ordering([1, 2, 3]). Here only var 1 can be parent of 2 and 3. 2 Can only be parent of 3, and so forth
-    k2score, G = K2_search(K2Ordering(ordering), vars, D)
+    res = @timed K2_search(K2Ordering(ordering), vars, D)
+    (k2score, G) = res.value
+    println("K2 run time: $(round(res.time, digits=3)) s ") #,
 
     println("K2 DAG with $(nv(G)) nodes and $(ne(G)) edges")
     println("Score: ", k2score)
-    write_gph(G, Dict(i => vars[i].name for i in eachindex(vars)), k2score, "output/K2/", outfile)
+    vars_dict = Dict(i => vars[i].name for i in eachindex(vars))
+    write_gph(G, vars_dict, k2score, "output/K2/", outfile)
+    plot = gplot(G,
+        nodelabel=(string(vars_dict[i]) for i in eachindex(vars)),
+        nodelabeldist=1.5,          # distance from node center
+        nodelabelsize=8,            # font size
+        )
 
-    ldgs_score, G = local_directed_graph_search(10000, vars, D)
+    draw(PNG("output/K2/" * outfile * ".png", 6inch, 6inch), plot)
+
+    # run once, keep both result and timing
+    res = @timed local_directed_graph_search(10000, vars, D)
+    (ldgs_score, G) = res.value
+    println("LDGS run time: $(round(res.time, digits=3)) s ") #,
+            # "allocated $(Base.format_bytes(res.bytes))")
+
     println("Local DAG with $(nv(G)) nodes and $(ne(G)) edges")
     println("Score: ", ldgs_score)
-    write_gph(G, Dict(i => vars[i].name for i in eachindex(vars)), ldgs_score, "output/LDGS/", outfile)
-
+    vars_dict = Dict(i => vars[i].name for i in eachindex(vars))
+    write_gph(G, vars_dict, ldgs_score, "output/LDGS/", outfile)
+    plot = gplot(G,
+        nodelabel=(string(vars_dict[i]) for i in eachindex(vars)),
+        nodelabeldist=1.5,          # distance from node center
+        nodelabelsize=8,            # font size
+        )
+    draw(PNG("output/LDGS/" * outfile * ".png", 6inch, 6inch), plot)
 
     # TODO:
     # TRY DIFFERENT ORDERINGS FOR K2 (RANDOM, REVERSED, ETC)
