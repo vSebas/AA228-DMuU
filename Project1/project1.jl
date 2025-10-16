@@ -39,39 +39,28 @@ function compute(infile, outfile)
     r = [maximum(df[!, col]) for col in names(df)]
     vars = [Variable(Symbol(var), r[i]) for (i, var) in enumerate(names(df))]
 
-    ordering = collect(1:length(vars))
-    # Ex: K2Ordering([1, 2, 3]). Here only var 1 can be parent of 2 and 3. 2 Can only be parent of 3, and so forth
-    res = @timed K2_search(K2Ordering(ordering), vars, D)
-    (k2score, G) = res.value
-    println("K2 run time: $(round(res.time, digits=3)) s ") #,
+    # ordering = collect(1:length(vars))
+    # # Ex: K2Ordering([1, 2, 3]). Here only var 1 can be parent of 2 and 3. 2 Can only be parent of 3, and so forth
+    # res = @timed K2_search(K2Ordering(ordering), vars, D)
+    # (k2score, G) = res.value
+    # println("K2 run time: $(round(res.time, digits=3)) s ") #,
 
-    println("K2 DAG with $(nv(G)) nodes and $(ne(G)) edges")
-    println("Score: ", k2score)
-    vars_dict = Dict(i => vars[i].name for i in eachindex(vars))
-    write_gph(G, vars_dict, k2score, "output/K2/", outfile)
-    plot = gplot(G,
-        nodelabel=(string(vars_dict[i]) for i in eachindex(vars)),
-        nodelabeldist=1.5,          # distance from node center
-        nodelabelsize=8,            # font size
-        )
+    # println("K2 DAG with $(nv(G)) nodes and $(ne(G)) edges")
+    # println("Score: ", k2score)
+    # vars_dict = Dict(i => vars[i].name for i in eachindex(vars))
+    # write_gph(G, vars_dict, k2score, "output/K2/", outfile)
+    # plot = gplot(G, nodelabel=(string(vars_dict[i]) for i in eachindex(vars)))
+    # draw(PNG("output/K2/" * outfile * ".png", 6inch, 6inch), plot)
 
-    draw(PNG("output/K2/" * outfile * ".png", 6inch, 6inch), plot)
-
-    # run once, keep both result and timing
     res = @timed local_directed_graph_search(10000, vars, D)
     (ldgs_score, G) = res.value
-    println("LDGS run time: $(round(res.time, digits=3)) s ") #,
-            # "allocated $(Base.format_bytes(res.bytes))")
+    println("LDGS run time: $(round(res.time, digits=3)) s ")
 
     println("Local DAG with $(nv(G)) nodes and $(ne(G)) edges")
     println("Score: ", ldgs_score)
     vars_dict = Dict(i => vars[i].name for i in eachindex(vars))
     write_gph(G, vars_dict, ldgs_score, "output/LDGS/", outfile)
-    plot = gplot(G,
-        nodelabel=(string(vars_dict[i]) for i in eachindex(vars)),
-        nodelabeldist=1.5,          # distance from node center
-        nodelabelsize=8,            # font size
-        )
+    plot = gplot(G, nodelabel=(string(vars_dict[i]) for i in eachindex(vars)), arrowlengthfrac=0.07)
     draw(PNG("output/LDGS/" * outfile * ".png", 6inch, 6inch), plot)
 
     # TODO:
