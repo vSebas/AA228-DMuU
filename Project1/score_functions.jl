@@ -90,7 +90,7 @@ Compute the total Bayesian score for a Bayesian network given the variables, gra
     D: Data matrix (rows: variables, columns: observations)
     returns: Total Bayesian score (Float64)
 """
-function bayesian_score(vars, G::DiGraph, D)
+function bayesian_score(vars, G::SimpleDiGraph, D)
     n = length(vars)
     r = [vars[i].r for i in 1:n] # cardinalities
     q = [isempty(inneighbors(G, i)) ? 1 : prod(r[j] for j in inneighbors(G, i)) for i in 1:n] # parent configurations

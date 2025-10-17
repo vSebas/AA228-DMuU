@@ -4,10 +4,10 @@ struct K2Ordering
     ordering::Vector{Int} # variable ordering
 end
 
-# struct LDGS
-#     # G::SimpleDiGraph  # initial directed graph
-#     k_max::Int       # maximum number of iterations
-# end
+struct LDGS
+    G::SimpleDiGraph  # initial directed graph
+    k_max::Int       # maximum number of iterations
+end
 
 """
     K2_search(method::K2Ordering, vars, D)
@@ -55,18 +55,18 @@ function rand_graph_neighbor(G)
     n = nv(G)   # number of nodes
     i = rand(1:n) # select a random node
     j = mod1(i + rand(2:n)-1, n) # select random node starting from i+1 to n, wrapping around using mod1 to avoid self-loop
-    G_new = deepcopy(G)
+    G_new = copy(G)
 
     has_edge(G, i, j) ? rem_edge!(G_new, i, j) : add_edge!(G_new, i, j) # if edge exists, remove it; otherwise, add it
 
     return G_new
 end
 
-function local_directed_graph_search(k_max, vars, D)
-    G = SimpleDiGraph(length(vars)) # initialize directed graph, no edges
+function local_directed_graph_search(method::LDGS, vars, D)
+    G = method.G
     y = bayesian_score(vars, G, D)
 
-    for k in 1:k_max
+    for k in 1:method.k_max
         G_new = rand_graph_neighbor(G)
         y_new = is_cyclic(G_new) ? -Inf : bayesian_score(vars, G_new, D)
 
