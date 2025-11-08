@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-
 def load_dataset(csv_path):
     """Load dataset from a CSV file.
 

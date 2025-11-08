@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-from mdp import MDP, PolicyMDP
+
 import numpy as np
+from mdp import MDP
 
 # for policy evaluation, bellman update
 # Q_U(s,a) one-step lookahead
 def lookahead(MDP, U, s, a): # iterative
     # If reward depends only on (s,a), keep mdp.R(s,a); otherwise use mdp.R(s,a,s_next)
-    return MDP.R(s, a) + MDP.gamma * sum(MDP.T(s, a, s_next) * U[s_next] for s_next in MDP.S)
+    return MDP.R[int(s)-1, int(a)-1] + MDP.gamma * sum(MDP.T[int(s)-1, int(a)-1, int(s_next)-1] * U[s_next] for s_next in MDP.S)
 
 # Given a state, and future utilities, improve the value function
 # (TU)(s) = max_a Q_U(s,a)
