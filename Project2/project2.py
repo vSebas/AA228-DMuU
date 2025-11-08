@@ -1,18 +1,27 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import model
 import util
 from mdp import MDP
 from policies import value_iteration
 
+def small_dataset():
+    data = util.load_dataset("small.csv")
+
+    mdp = MDP()
+    mdp.mle(data)
+
+    # Transistion models are conditional probabilities distributions, so they must sum up to one over all states
+    print("Row sums of T by (s,a) should be 1 or 0 if unseen:")
+    row_sums = mdp.T.sum(axis=2)
+    print("min row sum:", row_sums[row_sums>0].min(), "max row sum:", row_sums.max())
+
+    U, pi = value_iteration(mdp)
+
+    util.save(mdp.state_to_idx,U,pi)
+
 def main():
-    mdp_data = util.load_dataset("small.csv").astype(float)  # or int for state/action columns
-    mdp = model.construct_model(mdp_data)
-    U, pi = value_iteration(10, mdp)
-    
-    print(U)
-    print(pi)
+    small_dataset()
 
 if __name__ == "__main__":
     main()
