@@ -29,7 +29,7 @@ def run_medium():
     A = np.unique(data[:,1]).astype(int)
 
     model = QLearning(S_raw, A)
-    _, _ = model.simulate(data, 1000)      # runs the updates
+    _, _ = model.simulate(data, 10000)      # runs the updates
     Q_seen = np.asarray(model.Q)     # <-- grab the table here
 
     # Implement k-nearest to fill missing states

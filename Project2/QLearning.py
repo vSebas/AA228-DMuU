@@ -3,7 +3,7 @@
 import numpy as np
 
 class QLearning:
-    def __init__(self, S, A, alpha=0.2, gamma=0.95):
+    def __init__(self, S, A, alpha=0.2, gamma=1):
         self.S = S
         self.A = A
         self.Q = np.zeros((S.shape[0], A.shape[0]))
