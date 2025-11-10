@@ -2,7 +2,7 @@ import numpy as np
 import random
 
 class QLearning:
-    """Batch (offline) tabular Q-learning with α(s,a)=1/N(s,a)."""
+    """Offline Q-learning"""
     def __init__(self, S_raw, A_ids):
         self.S_raw = np.asarray(S_raw, dtype=np.int64)
         self.A_ids = np.asarray(A_ids, dtype=np.int64)

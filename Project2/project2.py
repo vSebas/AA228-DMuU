@@ -3,9 +3,8 @@ import argparse
 import numpy as np
 
 from mdp import MDP
-from policies import value_iteration
+from helper import value_iteration, knn_fill_states
 from qlearning import QLearning
-from interpolate import knn_fill_states
 from utils import (
     load_dataset,
     write_policy_actions_only,
@@ -54,7 +53,7 @@ def run_medium(data_path="datasets/medium.csv"):
     Q_seen = agent.simulate(data, n_passes=300, gamma=1.0, alpha=None, tol=1e-5)
 
     # Build full 50k×7 Q and copy observed rows
-    nS_full, nA = 50_000, 7
+    nS_full, nA = 50000, 7
     Q_full = np.zeros((nS_full, nA), dtype=float)
     N_full = np.zeros((nS_full, nA), dtype=np.int64)
 
@@ -64,10 +63,10 @@ def run_medium(data_path="datasets/medium.csv"):
         Q_full[i_full, :] = Q_seen[i_seen, :]
         N_full[i_full, :] = agent.N[i_seen, :]
 
-    # Fill UNSEEN states via KNN in (pos,vel) grid
+    # Fill unseen states with k-nearest neighbors in (pos,vel) grid
     Q_full = knn_fill_states(Q_full, S_raw, base=(500, 100), fallback_rows=Q_seen)
 
-    # Greedy policy with masking of never-tried actions (only on seen states)
+    # Greedy policy
     pi0 = np.empty(nS_full, dtype=np.int64)
     seen_set = set(int(s) for s in S_raw)
     for i in range(nS_full):
@@ -99,7 +98,7 @@ def run_medium(data_path="datasets/medium.csv"):
 
 # Large: Q-learning
 def run_large(data_path="datasets/large.csv",
-              n_states_full=302_020, n_actions_full=9, gamma=0.95):
+              n_states_full=302020, n_actions_full=9, gamma=0.95):
     data = load_dataset(data_path)
 
     # Normalize actions to 0..(n_actions_full-1) if they’re 1..n
@@ -131,7 +130,7 @@ def run_large(data_path="datasets/large.csv",
                 q[counts == 0] = -1e12
             pi0[i] = int(np.argmax(q))
         else:
-            # unseen state → safest fallback = most frequent action in data
+            # unseen state -> safest fallback = most frequent action in data
             most_common = int(np.bincount(data[:, 1], minlength=n_actions_full).argmax())
             pi0[i] = most_common
 

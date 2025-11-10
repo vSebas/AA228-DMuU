@@ -1,5 +1,4 @@
 import numpy as np
-import os
 
 def load_dataset(csv_path):
     """Load (s,a,r,sp) with header"""
@@ -16,10 +15,6 @@ def write_policy_actions_only(actions_1based, path):
     with open(path, "w") as f:
         for a in actions_1based:
             f.write(f"{int(a)}\n")
-    # sanity
-    n_lines = sum(1 for _ in open(path, "r"))
-    assert n_lines == len(actions_1based), f"line count {n_lines} != {len(actions_1based)}"
-    assert 1 <= int(np.min(actions_1based)) and int(np.max(actions_1based)) >= 1
 
 def write_results_table(state_ids, values, actions, path, header="state\tvalue*\taction*"):
     rows = np.column_stack([state_ids, values, actions])
