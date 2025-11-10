@@ -3,10 +3,7 @@
 import numpy as np
 
 class MDP:
-    def __init__(self, gamma=0.99):
-        self.S = None
-        self.A = None
-
+    def __init__(self, gamma=0.95):
         # mappings
         self.state_to_idx = None
         self.idx_to_state = None

@@ -2,11 +2,12 @@
 
 import numpy as np
 import util
+from QLearning import QLearning
 from mdp import MDP
 from policies import value_iteration
 
-def small_dataset():
-    data = util.load_dataset("small.csv")
+def run_small():
+    data = util.load_dataset("datasets/small.csv")
 
     mdp = MDP()
     mdp.mle(data)
@@ -18,10 +19,23 @@ def small_dataset():
 
     U, pi = value_iteration(mdp)
 
-    util.save(mdp.state_to_idx,U,pi)
+    util.save("small", mdp.state_to_idx, U, pi)
+
+def run_medium():
+    data = util.load_dataset("datasets/medium.csv")
+
+    S = np.unique(np.concatenate([data[:,0], data[:,3]])) # (s, sp)
+    A = np.unique(data[:,1])
+
+    model = QLearning(S, A)
+    U, pi = model.simulate(data, 100)
+
+    util.save("medium", model.state_to_idx, U, pi)
 
 def main():
-    small_dataset()
+    # run_small()
+    run_medium()
+
 
 if __name__ == "__main__":
     main()

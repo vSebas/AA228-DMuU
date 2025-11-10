@@ -5,8 +5,8 @@ from mdp import MDP
 
 def lookahead(MDP, U):
     """
-    Return Q-function after executing one-step bellman lookahead
-    Bellman update for iterative policy evaluation
+    one-step lookahead used by the Bellman optimality backup
+    Iterative policy evaluation
 
     Parameters
     ----------
@@ -25,7 +25,7 @@ def lookahead(MDP, U):
 
 def bellman_backup(MDP, U, k_max, eps=1e-3):
     """
-    Improve value function by applying a bellman backup/update for iterative policy evaluation
+    Improve value function by applying a bellman backup used by value iteration
 
     Parameters
     ----------
@@ -69,7 +69,7 @@ def bellman_backup(MDP, U, k_max, eps=1e-3):
 def value_iteration(MDP, k_max=10000):
     """
     Perform value iteration to converge to the optimal value function.
-    After computing the optimal value function, the greedy value function is obtained
+    After computing the optimal value function, the greedy policy is obtained
     Returns optimal values and policies per state
 
     Parameters

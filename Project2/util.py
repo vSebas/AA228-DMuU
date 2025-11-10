@@ -24,6 +24,31 @@ def load_dataset(csv_path):
 
     return inputs
 
+def save(name, mapping, U, pi):
+    # === Combine policy and value into one output file ===
+    rows = []
+
+    # Ensure deterministic ordering by sorting state IDs
+    for s_id in sorted(pi.keys()):
+        a_id = pi[s_id]
+        u_val = U[mapping[s_id]]
+        rows.append([int(s_id), float(u_val), int(a_id)])
+
+    out = np.array(rows, dtype=float)
+
+    np.savetxt(
+        "output/results_"+name+".txt",
+        out,
+        fmt=["%d", "%.8f", "%d"],
+        header="state\tvalue*\taction*",
+        comments=""
+    )
+
+    np.savetxt(
+        "output/"+name+".policy",
+        out[:,2],
+        fmt=["%d"]
+    )
 
 def plot(x, y, theta, save_path, correction=1.0):
     """Plot dataset and fitted logistic regression parameters.
@@ -52,29 +77,3 @@ def plot(x, y, theta, save_path, correction=1.0):
     plt.xlabel('x1')
     plt.ylabel('x2')
     plt.savefig(save_path)
-
-def save(mapping, U, pi):
-    # === Combine policy and value into one output file ===
-    rows = []
-
-    # Ensure deterministic ordering by sorting state IDs
-    for s_id in sorted(pi.keys()):
-        a_id = pi[s_id]
-        u_val = U[mapping[s_id]]
-        rows.append([int(s_id), float(u_val), int(a_id)])
-
-    out = np.array(rows, dtype=float)
-
-    np.savetxt(
-        "results_small.txt",
-        out,
-        fmt=["%d", "%.8f", "%d"],
-        header="state\tvalue*\taction*",
-        comments=""
-    )
-
-    np.savetxt(
-        "small.policy",
-        out[:,2],
-        fmt=["%d"]
-    )
