@@ -1,36 +1,63 @@
-#!/usr/bin/env python3
-
 import numpy as np
+import random
 
 class QLearning:
-    def __init__(self, S, A, alpha=0.2, gamma=1):
-        self.S = S
-        self.A = A
-        self.Q = np.zeros((S.shape[0], A.shape[0]))
-        self.gamma = gamma
-        self.alpha = alpha
+    def __init__(self, S_raw, A):
+        self.S_raw = np.asarray(S_raw, dtype=np.int64)            # raw ids seen in data
+        self.A = np.asarray(A, dtype=np.int64)                    # e.g., 0..6
+        self.nS = len(self.S_raw)
+        self.nA = len(self.A)
+        self.state_to_idx = {int(s): i for i, s in enumerate(self.S_raw)}
+        self.Q = np.zeros((self.nS, self.nA), dtype=float)
+        self.N = np.zeros((self.nS, self.nA), dtype=np.int64)     # visit counts
 
-        self.state_to_idx = {s:i for i,s in enumerate(self.S)}
-        self.action_to_idx = {a:i for i,a in enumerate(self.A)}
-        
-        self.idx_to_state = {i:s for s,i in self.state_to_idx.items()}
-        self.idx_to_action = {i:a for a,i in self.action_to_idx.items()}
+    def simulate(
+        self,
+        data,
+        n_passes=100,
+        gamma=1.0,
+        alpha=None,                    # if None → use 1/N(s,a)
+        tol=1e-5,                      # early stop threshold on max |ΔQ|
+        shuffle_each_pass=True,
+        terminal_states=None           # set of raw state ids; if s' ∈ terminal → no bootstrap
+    ):
+        if terminal_states is None:
+            terminal_states = set()
 
-    def Qlearning_update(self, s, a, r, s_next):
-        return self.Q[s,a] + self.alpha*(r + self.gamma*np.max(self.Q[s_next]) - self.Q[s,a])
-    
-    def simulate(self, data, k_max):
-        
-        for k in range(k_max):
+        # make sure we can shuffle in-place cheaply
+        data = list(map(tuple, data))
 
-            for s,a,r,sp in data:
-                s_i = self.state_to_idx[s]
-                sp_i = self.state_to_idx[sp]
-                a_i = self.action_to_idx[a]
-                self.Q[s_i,a_i] = self.Qlearning_update(s_i, a_i, r, sp_i)
+        for _ in range(n_passes):
+            if shuffle_each_pass:
+                random.shuffle(data)
 
-        max_actions = np.argmax(self.Q, axis=1)  # axis=1 regresa idx de la columna en la que el elemento max de cada row se encuentra.
+            max_abs_delta = 0.0
 
-        pi = {self.idx_to_state[s]:self.idx_to_action[max_actions[s]] for s in range(self.S.shape[0])}
+            for (s, a, r, sp) in data:
+                s = int(s); a = int(a); sp = int(sp)
+                i = self.state_to_idx[s]
+                j = self.state_to_idx.get(sp, None)
 
-        return self.Q.max(axis=1), pi
+                if (sp in terminal_states) or (j is None):
+                    max_next = 0.0
+                else:
+                    max_next = float(np.max(self.Q[j, :]))
+
+                target = r + gamma * max_next
+                delta  = target - self.Q[i, a]
+
+                # step size: either fixed alpha or 1/N(s,a)
+                if alpha is None:
+                    self.N[i, a] += 1
+                    step = 1.0 / self.N[i, a]
+                else:
+                    step = alpha
+
+                self.Q[i, a] += step * delta
+                if abs(delta) > max_abs_delta:
+                    max_abs_delta = abs(delta)
+
+            if max_abs_delta < tol:
+                break
+
+        return self.Q  # (nS, nA)
