@@ -1,7 +1,7 @@
 # toy_mcts_example.py
 
 import numpy as np
-from mcts import MCTS
+from mcts_recursive import MCTS
 
 class LineWorldMDP:
     """
@@ -67,7 +67,7 @@ if __name__ == "__main__":
 
     # Tune these if you want:
     iters = 2000
-    max_depth = 100
+    max_depth = 1
     c = 1.4
     gamma = 0.5
 
