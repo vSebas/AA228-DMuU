@@ -1,7 +1,12 @@
 import numpy as np
+import itertools
+
+from graphviz import Digraph
 
 class Node:
+    _ids = itertools.count()
     def __init__(self, state, untried_actions, action=None, parent=None):
+        self.id = next(Node._ids)
         self.state = state
         self.parent = parent
         self.action = action    # action that led to this node
@@ -127,3 +132,18 @@ class MCTS:
         # 4. Backpropagation
         # Update statistics with the simulation result.
         self.backpropagate(node, rollout_return)
+
+def export_tree_to_dot(self, root, filename="tree.dot"):
+    dot = Digraph()
+
+    def add(node):
+        label = f"ID={node.id}\nN={node.N}"
+        dot.node(str(node.id), label)
+
+        for child in node.children:
+            edge_label = f"a={child.action_index}\nr={child.edge_reward:.2f}"
+            dot.edge(str(node.id), str(child.id), edge_label)
+            add(child)
+
+    add(root)
+    dot.render(filename, format='png', cleanup=True)

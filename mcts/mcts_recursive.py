@@ -1,7 +1,12 @@
 import numpy as np
+import itertools
+
+from graphviz import Digraph
 
 class Node:
-    def __init__(self, state, untried_actions, action=None, parent=None):
+    _ids = itertools.count()
+    def __init__(self, state, untried_actions, reward, action=None, parent=None):
+        self.id = next(Node._ids)
         self.state = state
         self.parent = parent
         self.action = action    # action that led to this node
@@ -17,6 +22,8 @@ class Node:
             self.Q_sa[a] = 0.0
             self.N_sa[a] = 0
 
+        self.reward = reward
+
 class MCTS:
     def __init__(self, model, iters=10000, max_depth=10, c=1.4, gamma=1):
         self.max_iterations = iters
@@ -26,13 +33,15 @@ class MCTS:
         self.mdp = model
 
     def get_best_root_action(self, root_state):
-        root = Node(root_state, untried_actions=self.mdp.actions(root_state))
-        depth = 0
+        root = Node(root_state, reward=0.0, untried_actions=self.mdp.actions(root_state))
+        depth = 50
 
         for _ in range(self.max_iterations):
             self.build_tree(root, depth)
             
         best_action = max(root.Q_sa, key=root.Q_sa.get)
+
+        self.export_tree_to_dot(root)
         return best_action
 
     def selection(self, node):
@@ -56,10 +65,10 @@ class MCTS:
         return best_action
     
     def expand(self, action, node):
-        next_state, _ = self.mdp.step(node.state, action)
+        next_state, reward = self.mdp.step(node.state, action)
 
         actions = self.mdp.actions(next_state)
-        child = Node(next_state, actions, action, node)
+        child = Node(next_state, actions, reward, action, node)
 
         node.children.append(child)
 
@@ -94,7 +103,7 @@ class MCTS:
             current.N += 1
 
             if current.parent is not None:
-                roll_discounted_return = self.gamma * roll_discounted_return
+                roll_discounted_return = current.reward + self.gamma * roll_discounted_return
 
                 action = current.action
 
@@ -129,3 +138,26 @@ class MCTS:
         self.backpropagate(node, value)
         
         return value
+    
+    def export_tree_to_dot(self, root, filename="tree.dot"):
+        dot = Digraph()
+
+        def add(node):
+            # Node label (state ID + visit count)
+            node_label = f"ID={node.id}\nN={node.N}"
+            dot.node(str(node.id), node_label)
+
+            # Add children and edges
+            for child in node.children:
+                a = child.action                       # action that led to child
+                q = node.Q_sa[a]                       # Q(s,a)
+                n_sa = node.N_sa[a]                    # N(s,a)
+
+                edge_label = f"a={a}\nQ={q:.3f}\nN={n_sa}"
+                dot.edge(str(node.id), str(child.id), edge_label)
+
+                add(child)
+
+        add(root)
+        dot.render(filename, format='png', cleanup=True)
+        print(f"[MCTS] Tree exported to {filename}.png")
